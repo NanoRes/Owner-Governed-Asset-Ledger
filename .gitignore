@@ -1,0 +1,10 @@
+# Anchor build artifacts
+**/target/
+**/.anchor/
+
+# Program keypairs
+*.json
+!level-registry/package.json
+!level-registry/idl/*.json
+!owner-governed-asset-ledger/package-lock.json
+!owner-governed-asset-ledger/tsconfig.json

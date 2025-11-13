@@ -1,0 +1,19 @@
+[provider]
+cluster = "mainnet"
+# Studio payer wallet that funds deployments.
+wallet = "/home/nanores/.config/solana/nano_id.json"
+
+[workspace]
+members = ["programs/owner_governed_asset_ledger"]
+
+[programs.mainnet]
+owner_governed_asset_ledger = "GwMpopxNkDYsnucBRPf47QSEsEzA3rS1o6ioMX78hgqx"
+
+[registry]
+url = "https://api.apr.dev"
+
+[scripts]
+test = "anchor test"
+
+[profile.release]
+overflow-checks = true
