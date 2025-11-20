@@ -2,9 +2,8 @@
 
 The Owner-Governed Asset Ledger is a shared Solana program that lets multiple studios
 mint, curate, and govern user-generated content (UGC) under a single, transparent
-registry. OGAL is deployed to Solana mainnet with program ID
-`GwMpopxNkDYsnucBRPf47QSEsEzA3rS1o6ioMX78hgqx` and backs the live Token Toss
-player-content pipeline. This repository packages the on-chain program, Node.js helpers, and Unity integration
+registry. OGAL is deployed to Solana mainnet with program ID `GwMpopxNkDYsnucBRPf47QSEsEzA3rS1o6ioMX78hgqx` and 
+backs the live Token Toss player-content pipeline. This repository packages the on-chain program, Node.js helpers, and Unity integration
 guides so partner teams can onboard additional experiences without redeploying the
 contract.
 
