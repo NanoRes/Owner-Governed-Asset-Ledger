@@ -4,8 +4,7 @@ The Owner-Governed Asset Ledger is a shared Solana program that lets multiple st
 mint, curate, and govern user-generated content (UGC) under a single, transparent
 registry. OGAL is deployed to Solana mainnet with program ID
 `GwMpopxNkDYsnucBRPf47QSEsEzA3rS1o6ioMX78hgqx` and backs the live Token Toss
-player-content pipeline.【F:owner-governed-asset-ledger/README.md†L200-L207】 This
-repository packages the on-chain program, Node.js helpers, and Unity integration
+player-content pipeline. This repository packages the on-chain program, Node.js helpers, and Unity integration
 guides so partner teams can onboard additional experiences without redeploying the
 contract.
 
@@ -33,17 +32,18 @@ namespace currently in production for Token Toss.
 
 OGAL scopes every registry to a **namespace**, a public key chosen by the content
 owner. Initialization derives deterministic program-derived accounts (PDAs) that
-store the registry configuration and mint authority, enforcing creator share rules
-and collection alignment before every mint or manifest update.【F:docs/ogal-protocol/ogal-shared-deployment-guide.md†L10-L79】
+store the registry configuration and mint authority, enforcingcreator share rules
+and collection alignment before every mint or manifest update.
+
 Studios can rotate authorities, pause minting, or migrate to a fresh namespace
 without redeploying the program, preserving historical audit trails for all
-manifests.【F:docs/ogal-protocol/ogal-shared-deployment-guide.md†L27-L215】
+manifests.
 
 Each object minted through OGAL references an off-chain manifest (typically JSON,
 GLB, or any other format required by the consuming experience) and is linked to a
 collection NFT controlled by the namespace’s mint-authority PDA. The CLI and Unity
 helpers in this repository enforce those invariants and surface rich diagnostics
-when transactions fail.【F:docs/ogal-cli/ogal-cli-public-guide.md†L3-L139】
+when transactions fail.
 
 ---
 
@@ -52,14 +52,14 @@ when transactions fail.【F:docs/ogal-cli/ogal-cli-public-guide.md†L3-L139】
 1. **Clone this repository** and install the Solana + Anchor toolchain required to
    rebuild the program if you operate your own fork.
 2. **Install Node.js dependencies** for the helper scripts with
-   `npm --prefix solana/owner-governed-asset-ledger install` (run once per machine).【F:docs/ogal-cli/ogal-cli-public-guide.md†L39-L100】
+   `npm --prefix solana/owner-governed-asset-ledger install` (run once per machine).
 3. **Collect deployment constants** published by NanoRes Studios (program ID,
    namespace, config PDA, mint-authority PDA, and collection mint). These values
    are recorded in `Assets/Solana_Toolbelt/_Data/Solana_Configuration.asset` inside
-   the Unity project and mirrored in this documentation.【F:owner-governed-asset-ledger/README.md†L200-L207】
+   the Unity project and mirrored in this documentation.
 4. **Verify access control** by confirming your authority wallet matches the
    canonical namespace or appears in the `ALLOWED_DEPLOYERS` list before running
-   any on-chain instruction.【F:docs/ogal-protocol/ogal-shared-deployment-guide.md†L40-L75】
+   any on-chain instruction.
 5. **Choose the manifest file format** that fits your experience. OGAL only stores
    a content hash and URI, so you can reference JSON, GLB, audio packs, or any
    other deterministic asset bundle that your client can reconstruct.
@@ -77,7 +77,7 @@ program. To initialize one:
    `solana-keygen new -o namespace.json`) and fund the payer wallet with SOL.
 2. **Decide on the registry authority**. The authority keypair will govern the
    namespace after initialization. It can match the payer or be separately
-   whitelisted via `ALLOWED_DEPLOYERS` for delegated setup.【F:docs/ogal-protocol/ogal-shared-deployment-guide.md†L40-L75】
+   whitelisted via `ALLOWED_DEPLOYERS` for delegated setup.
 3. **Run the initialization helper**:
 
    ```bash
@@ -90,14 +90,14 @@ program. To initialize one:
 
    The script derives the config and mint-authority PDAs, submits the transaction,
    and prints the resulting addresses and signature. Archive this output for your
-   project’s records.【F:owner-governed-asset-ledger/scripts/initialize.js†L37-L153】
+   project’s records.
 4. **Store the derived addresses** in your configuration management system (for
    Unity projects, update `Solana_Configuration.asset`). This prevents future
-   clients from drifting to the wrong namespace.【F:docs/ogal-protocol/ogal-shared-deployment-guide.md†L185-L207】
+   clients from drifting to the wrong namespace.
 
 If you need to migrate to a new namespace later, use the `migrate-namespace`
 helper or the Unity transaction sender equivalents to clone the configuration
-safely.【F:docs/ogal-protocol/ogal-shared-deployment-guide.md†L165-L215】
+safely.
 
 ---
 
@@ -109,7 +109,7 @@ protocol itself is agnostic to the file type. Teams should:
 - **Select an asset format** that best represents their UGC. Token Toss uses JSON
   files generated by its level editor so the game can reconstruct layouts for any
   minted level, but other experiences may choose binary blobs or media bundles
-  instead.【F:docs/ogal-protocol/mint-signature-changes.md†L7-L28】
+  instead.
 - **Persist manifest hashes** alongside the asset so you can prove tampering
   hasn’t occurred before sending the update instruction.
 - **Version schemas** as needed. Store migration guides with your manifests so
@@ -118,7 +118,7 @@ protocol itself is agnostic to the file type. Teams should:
 When minting with `mint-object.js`, supply the manifest URI, 32-byte hash, object
 ID, and creator list. The helper verifies that the namespace owns the config PDA
 and that your manifest creator still appears in the on-chain account, preventing
-rogue updates.【F:docs/ogal-cli/ogal-cli-public-guide.md†L111-L139】
+rogue updates.
 
 ---
 
@@ -127,10 +127,10 @@ rogue updates.【F:docs/ogal-cli/ogal-cli-public-guide.md†L111-L139】
 Once your namespace is live, use the scripted helpers to operate it:
 
 - **Rotate the registry authority** with `npm run set-authority` when governance
-  changes hands.【F:docs/ogal-cli/ogal-cli-public-guide.md†L68-L85】
+  changes hands.
 - **Pause or resume minting** via `npm run set-paused` during maintenance windows.
 - **Rotate the collection update authority** back and forth between the OGAL
-  mint-authority PDA and a human wallet when editing Metaplex metadata.【F:docs/ogal-protocol/collection-authority-rotation.md†L26-L109】
+  mint-authority PDA and a human wallet when editing Metaplex metadata.
 - **Inspect collection alignment** with `npm run inspect-collection` whenever mint
   guard rails trigger to confirm the namespace, collection, and PDA seeds match.
 
@@ -142,12 +142,12 @@ Detailed runbooks for each helper live under `docs/ogal-cli` and `docs/ogal-prot
 
 - Capture transaction signatures emitted by the CLI or Unity clients so support
   engineers can audit failures. Token Toss records mint and update signatures in
-  both the editor asset and runtime JSON saves for this reason.【F:docs/ogal-protocol/mint-signature-changes.md†L7-L28】
+  both the editor asset and runtime JSON saves for this reason.
 - Use the mint debugging runbook (`docs/ogal-protocol/mint-debugging-runbook.md`)
   to interpret common on-chain errors and confirm collection authority state.
 - Archive output from the helper scripts; each command logs JSON blobs containing
   namespaces, PDAs, and transaction metadata suitable for ingestion into your
-  analytics stack.【F:docs/ogal-cli/ogal-cli-public-guide.md†L39-L139】
+  analytics stack.
 
 ---
 
