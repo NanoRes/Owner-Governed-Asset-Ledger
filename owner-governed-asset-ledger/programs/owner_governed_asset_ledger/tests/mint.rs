@@ -766,3 +766,242 @@ async fn mint_fails_when_verified_creator_missing_signature() {
         other => panic!("unexpected error: {:?}", other),
     }
 }
+
+#[tokio::test(flavor = "current_thread")]
+#[serial]
+async fn mint_fails_without_authority_signature() {
+    metadata_mock::reset();
+
+    let mut program_test = ProgramTest::new(
+        "owner-governed-asset-ledger",
+        owner_governed_asset_ledger::id(),
+        processor!(process_instruction_adapter),
+    );
+    program_test.add_program(
+        "spl_token",
+        TOKEN_ID,
+        processor!(spl_token::processor::Processor::process),
+    );
+    program_test.add_program(
+        "spl_associated_token_account",
+        ASSOCIATED_TOKEN_ID,
+        processor!(spl_associated_token_account::processor::process_instruction),
+    );
+    program_test.add_program(
+        "mpl_token_metadata",
+        mpl_token_metadata::ID,
+        processor!(metadata_mock::process_instruction),
+    );
+
+    let rent = Rent::default();
+    let collection_authority = Keypair::new();
+    let collection_mint = Pubkey::new_unique();
+    let metadata_state = MetadataAccount {
+        key: Key::MetadataV1,
+        update_authority: collection_authority.pubkey(),
+        mint: collection_mint,
+        name: "Collection".into(),
+        symbol: "COLL".into(),
+        uri: "https://example.com/collection.json".into(),
+        seller_fee_basis_points: 0,
+        creators: None,
+        primary_sale_happened: false,
+        is_mutable: true,
+        edition_nonce: None,
+        token_standard: None,
+        collection: None,
+        uses: None,
+        collection_details: None,
+        programmable_config: None,
+    };
+
+    let mut metadata_data = Vec::new();
+    metadata_state.serialize(&mut metadata_data).unwrap();
+
+    let (collection_metadata_pda, _) = MetadataAccount::find_pda(&collection_mint);
+    let (collection_master_edition_pda, _) = MetadataMasterEdition::find_pda(&collection_mint);
+
+    program_test.add_account(
+        collection_metadata_pda,
+        Account {
+            lamports: rent.minimum_balance(metadata_data.len()),
+            data: metadata_data,
+            owner: mpl_token_metadata::ID,
+            executable: false,
+            rent_epoch: 0,
+        },
+    );
+
+    program_test.add_account(
+        collection_mint,
+        Account::new(
+            rent.minimum_balance(spl_token::state::Mint::LEN),
+            spl_token::state::Mint::LEN,
+            &spl_token::ID,
+        ),
+    );
+
+    program_test.add_account(
+        collection_master_edition_pda,
+        Account::new(rent.minimum_balance(0), 0, &mpl_token_metadata::ID),
+    );
+
+    program_test.add_account(
+        collection_authority.pubkey(),
+        Account::new(1_000_000_000, 0, &system_program::ID),
+    );
+
+    let instructions_account = Account::new(1, 0, &sysvar::instructions::ID);
+    program_test.add_account(sysvar::instructions::id(), instructions_account);
+
+    let new_authority = Keypair::new();
+    program_test.add_account(
+        new_authority.pubkey(),
+        Account::new(1_000_000_000, 0, &system_program::ID),
+    );
+
+    let (mut banks_client, payer, _recent_blockhash) = program_test.start().await;
+
+    let namespace = Pubkey::new_unique();
+    let (config_pda, _) = Pubkey::find_program_address(
+        &[CONFIG_SEED, namespace.as_ref()],
+        &owner_governed_asset_ledger::id(),
+    );
+    let (auth_pda, _) = Pubkey::find_program_address(
+        &[AUTH_SEED, config_pda.as_ref()],
+        &owner_governed_asset_ledger::id(),
+    );
+
+    let initialize_accounts = owner_governed_asset_ledger::accounts::Initialize {
+        authority: payer.pubkey(),
+        payer: payer.pubkey(),
+        config: config_pda,
+        auth: auth_pda,
+        system_program: system_program::ID,
+    };
+    let initialize_ix = Instruction {
+        program_id: owner_governed_asset_ledger::id(),
+        accounts: initialize_accounts.to_account_metas(None),
+        data: owner_governed_asset_ledger::instruction::Initialize { namespace }.data(),
+    };
+    let latest_blockhash = banks_client.get_latest_blockhash().await.unwrap();
+    let mut initialize_tx = Transaction::new_with_payer(&[initialize_ix], Some(&payer.pubkey()));
+    initialize_tx.sign(&[&payer], latest_blockhash);
+    banks_client
+        .process_transaction(initialize_tx)
+        .await
+        .unwrap();
+
+    let set_authority_ix = Instruction {
+        program_id: owner_governed_asset_ledger::id(),
+        accounts: owner_governed_asset_ledger::accounts::SetAuthority {
+            authority: payer.pubkey(),
+            config: config_pda,
+        }
+        .to_account_metas(None),
+        data: owner_governed_asset_ledger::instruction::SetAuthority {
+            new_authority: new_authority.pubkey(),
+        }
+        .data(),
+    };
+    let latest_blockhash = banks_client.get_latest_blockhash().await.unwrap();
+    let mut set_authority_tx =
+        Transaction::new_with_payer(&[set_authority_ix], Some(&payer.pubkey()));
+    set_authority_tx.sign(&[&payer], latest_blockhash);
+    banks_client
+        .process_transaction(set_authority_tx)
+        .await
+        .unwrap();
+
+    let object_id = 1u64;
+    let (manifest_pda, _) = Pubkey::find_program_address(
+        &[MANIFEST_SEED, config_pda.as_ref(), &object_id.to_le_bytes()],
+        &owner_governed_asset_ledger::id(),
+    );
+    let (object_mint_pda, _) = Pubkey::find_program_address(
+        &[MINT_SEED, manifest_pda.as_ref()],
+        &owner_governed_asset_ledger::id(),
+    );
+    let (metadata_pda, _) = MetadataAccount::find_pda(&object_mint_pda);
+    let (master_edition_pda, _) = MetadataMasterEdition::find_pda(&object_mint_pda);
+    let recipient = payer.pubkey();
+    let recipient_token_account = get_associated_token_address(&recipient, &object_mint_pda);
+
+    let mint_accounts = owner_governed_asset_ledger::accounts::MintObjectNft {
+        base: owner_governed_asset_ledger::accounts::MintObjectNftBase {
+            authority: new_authority.pubkey(),
+            config: config_pda,
+            auth: auth_pda,
+            payer: payer.pubkey(),
+            object_manifest: manifest_pda,
+            object_mint: object_mint_pda,
+            recipient_token_account,
+            recipient,
+            token_program: TOKEN_ID,
+            associated_token_program: ASSOCIATED_TOKEN_ID,
+            system_program: system_program::ID,
+        },
+        metadata: owner_governed_asset_ledger::accounts::MintObjectNftMetadata {
+            metadata: metadata_pda,
+            master_edition: master_edition_pda,
+            collection_mint,
+            token_metadata_program: mpl_token_metadata::ID,
+        },
+    };
+
+    let mut mint_ix = Instruction {
+        program_id: owner_governed_asset_ledger::id(),
+        accounts: mint_accounts.to_account_metas(None),
+        data: owner_governed_asset_ledger::instruction::MintObjectNft {
+            object_id,
+            manifest_uri: "https://example.com/manifest.json".into(),
+            manifest_hash: [7u8; 32],
+            metadata_name: "Token Toss UGC Level".into(),
+            metadata_symbol: "TT".into(),
+            seller_fee_basis_points: 0,
+            creators: vec![CreatorInput {
+                address: payer.pubkey(),
+                verified: true,
+                share: 100,
+            }],
+        }
+        .data(),
+    };
+    mint_ix.accounts.extend_from_slice(&[
+        AccountMeta::new(collection_metadata_pda, false),
+        AccountMeta::new(collection_master_edition_pda, false),
+        AccountMeta::new_readonly(sysvar::rent::id(), false),
+        AccountMeta::new_readonly(sysvar::instructions::id(), false),
+    ]);
+
+    if let Some(account_meta) = mint_ix
+        .accounts
+        .iter_mut()
+        .find(|meta| meta.pubkey == new_authority.pubkey())
+    {
+        account_meta.is_signer = false;
+    }
+
+    let latest_blockhash = banks_client.get_latest_blockhash().await.unwrap();
+    let mint_tx = Transaction::new_signed_with_payer(
+        &[mint_ix],
+        Some(&payer.pubkey()),
+        &[&payer],
+        latest_blockhash,
+    );
+    let err = banks_client
+        .process_transaction(mint_tx)
+        .await
+        .expect_err("missing authority signature should fail");
+
+    match err {
+        BanksClientError::TransactionError(TransactionError::InstructionError(
+            _,
+            InstructionError::Custom(code),
+        )) => {
+            let expected: u32 = anchor_lang::error::ErrorCode::AccountNotSigner.into();
+            assert_eq!(code, expected);
+        }
+        other => panic!("unexpected error: {:?}", other),
+    }
+}

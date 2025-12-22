@@ -984,7 +984,7 @@ pub struct MintObjectNft<'info> {
 #[instruction(object_id: u64)]
 pub struct MintObjectNftBase<'info> {
     /// CHECK: The config account enforces this matches its stored authority.
-    pub authority: UncheckedAccount<'info>,
+    pub authority: Signer<'info>,
     #[account(
         mut,
         seeds = [CONFIG_SEED, config.namespace.as_ref()],
