@@ -14,6 +14,9 @@ OGAL scopes all registry state to a **namespace** (an arbitrary public key chose
 
 Individual assets mint under **object manifests** (PDAs derived from the config, the string `"object_manifest"`, and a numeric object identifier) and **object mints** (derived from the config, `"object_mint"`, and the same object identifier). These manifests cache the creator, metadata URI, manifest hash, and flags recording whether the asset is initialized, active, and minted.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L37-L60】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
 
+#### ObjectManifest PDA
+The `ObjectManifest` struct also persists the manifest and mint bump seeds (`bump`, `mint_bump`), minting/initialization flags (`minted`, `initialized`), and metadata URI length/padding fields (`metadata_uri_length`, `metadata_uri_padding`) to support deterministic PDA verification and zero-copy storage.
+
 ### Instruction Catalogue
 OGAL exposes the following instructions:
 
