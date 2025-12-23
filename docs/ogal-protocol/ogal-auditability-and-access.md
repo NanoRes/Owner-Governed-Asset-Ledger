@@ -12,9 +12,9 @@ OGAL's configuration accounts act as a namespace-scoped source of truth. The `Co
 
 Governance hooks complement the audit data. The `set_paused` instruction lets the configuration authority halt minting and emits an explicit `PauseStatusUpdated` event so compliance teams know when commercialization is suspended or resumed. Collection authorities can also be rotated between the mint PDA and a maintenance wallet without redeploying the program, preserving brand control while allowing day-to-day operations.
 
-## Provenance vs. Availability
+## Mutability and Update Control
 
-Manifest accounts track both provenance and availability. A manifest stores the immutable `object_id`, `config`, and `mint` references alongside mutable fields such as the metadata URI, manifest hash, and an `is_active` flag. When a rights holder toggles availability via `update_object_manifest`, OGAL reuses the original manifest PDA, verifies the config and mint seeds, and updates the `manifest_hash`, metadata URI, and `is_active` status in place before emitting `ManifestUpdated`. Because the PDA address and `object_id` remain constant, downstream indexers treat the asset as the same canonical object even if it is temporarily inactive or points at refreshed metadata. Availability changes therefore do not break provenance—every update is linked to the same manifest lineage and publicly logged.
+Manifest accounts track both provenance and availability. A manifest stores the immutable `object_id`, `config`, and `mint` references alongside mutable fields such as the metadata URI, manifest hash, and an `is_active` flag. Updates are authorized exclusively through `update_object_manifest`, which requires the signer to prove NFT ownership by presenting a token account that belongs to them, holds the correct mint, and contains at least one token before any changes are applied. Once those ownership checks pass, OGAL updates the `manifest_hash`, metadata URI, and `is_active` status in place and emits `ManifestUpdated`, preserving the same manifest PDA and `object_id` for downstream provenance tracking.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L749-L898】
 
 ## Why Tiered Access Still Matters
 
