@@ -60,6 +60,10 @@ When Solana executes `update_object_manifest`, the OGAL program enforces the fol
 2. **Ownership and balance checks** – Confirms the provided token account belongs to the signer, targets the correct mint, and holds at least one token (proving the caller owns the NFT).
 3. **Manifest PDA integrity** – Validates that the manifest account derives from expected seeds, uses the recorded bump, is initialized, and references the same config and mint.
 
+### Mutability and Update Control
+
+In `update_object_manifest` (`programs/owner_governed_asset_ledger/src/lib.rs`), the program verifies that the provided `metadata_program` matches the Metaplex token metadata program id and that the `object_metadata` account is the metadata PDA derived from the object mint. The instruction requires callers to pass the metadata account derived from the mint (`["metadata", TOKEN_METADATA_PROGRAM_ID, mint]`), then uses the program’s Auth PDA as the update authority to CPI into Metaplex and update the metadata URI in-place.
+
 Only after these validations does OGAL update the manifest hash, metadata URI, and active flag, subsequently emitting a `ManifestUpdated` event containing the config, manifest address, mint, object ID, and new status.
 
 ## CPI metadata updates
