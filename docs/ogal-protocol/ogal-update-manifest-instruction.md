@@ -30,6 +30,8 @@ The instruction references ten accounts:
 
 All accounts are writable except the mint, token account, metadata program, rent sysvar, and instructions sysvar. The metadata PDA remains writable so the CPI can update its URI.
 
+**Note:** The program validates that the `rent` sysvar matches `sysvar::rent::id()` and, when provided, the `instructions` sysvar matches `sysvar::instructions::id()`. Treat the account list above as the source of truth for required sysvars.
+
 ## Preflight Derivations and Validations
 
 Prior to dispatching the instruction, the CLI performs several validations:
