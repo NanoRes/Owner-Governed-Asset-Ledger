@@ -53,6 +53,18 @@ When Solana executes `update_object_manifest`, the OGAL program enforces the fol
 
 Only after these validations does OGAL update the manifest hash, metadata URI, and active flag, subsequently emitting a `ManifestUpdated` event containing the config, manifest address, mint, object ID, and new status.
 
+## Mutability and Update Control
+
+### Update Rules
+
+`update_object_manifest` enforces additional Metaplex-specific constraints and side effects:
+
+* **Metadata PDA requirement** – The instruction requires the correct Metaplex metadata PDA for the object mint (`object_metadata`) derived from `["metadata", TOKEN_METADATA_PROGRAM_ID, object_mint]`.
+* **Metadata program ID requirement** – The `metadata_program` account must be the Metaplex token metadata program ID (`metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`).
+* **CPI metadata updates** – OGAL updates the on-chain token metadata `uri` via a Metaplex CPI in addition to updating the manifest fields.
+
+Integrators must pass both the `object_metadata` account and the `metadata_program` account so the CPI can succeed alongside the manifest update.
+
 ## Transaction Submission
 
 Finally, the client wraps the instruction in a transaction, sets the owner as the fee payer, fetches a recent blockhash, and calls `sendAndConfirmTransaction`. Logging hooks surface derived accounts, the success signature, or failure logs to aid operators in monitoring or debugging submissions.
