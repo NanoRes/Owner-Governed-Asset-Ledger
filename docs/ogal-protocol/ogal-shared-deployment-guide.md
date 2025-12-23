@@ -12,7 +12,15 @@ OGAL scopes all registry state to a **namespace** (an arbitrary public key chose
 - **Config PDA** – derived from `seed = b"config"` and the namespace, stores the registry authority, namespace, pause status, object counter, and bump seeds.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L35-L61】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1060-L1087】
 - **Mint-authority PDA** – derived from `seed = b"auth"` and the config PDA, signs collection-level CPIs on behalf of the registry.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L35-L61】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1089-L1104】
 
-Individual assets mint under **object manifests** (PDAs derived from the config, the string `"object_manifest"`, and a numeric object identifier) and **object mints** (derived from the config, `"object_mint"`, and the same object identifier). These manifests cache the creator, metadata URI, manifest hash, and flags recording whether the asset is initialized, active, and minted.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L37-L60】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
+Individual assets mint under **object manifests** (PDAs derived from the config, the string `"object_manifest"`, and a numeric object identifier) and **object mints** (PDAs derived from the manifest PDA plus the `"object_mint"` seed). This makes the mint address indirectly tied to the `object_id` via the manifest PDA rather than directly from `config + object_id`. These manifests cache the creator, metadata URI, manifest hash, and flags recording whether the asset is initialized, active, and minted.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L37-L60】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
+
+### Transfers and Custody
+Ownership transfers happen via standard SPL Token transfers outside OGAL. OGAL does not escrow or mediate custody; it simply observes ownership at the moment a holder requests a manifest update. The `update_object_manifest` instruction enforces this by checking that the supplied token account belongs to the signer, matches the expected mint, and holds a positive balance before allowing metadata changes.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L749-L804】
+
+### Canonical Asset Identity
+OGAL treats the **ObjectManifest PDA** and its paired **object mint** as the canonical asset identity. The manifest PDA is the registry’s source of truth for a given object ID, while the object mint is the NFT representation derived from that same identifier. Together they anchor provenance and keep the asset identity stable even as metadata evolves.
+
+The `ObjectManifest` account stores the key fields clients should use to confirm identity and integrity: `object_id`, `config`, `mint`, `manifest_hash`, `metadata_uri`, `creator`, and `is_active`. Consumers should treat the manifest PDA address plus the recorded `mint` as the canonical handle for the asset, and validate that updates only mutate the hash/URI/activation state without changing the object’s identity.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
 
 #### ObjectManifest PDA
 The `ObjectManifest` struct also persists the manifest and mint bump seeds (`bump`, `mint_bump`), minting/initialization flags (`minted`, `initialized`), and metadata URI length/padding fields (`metadata_uri_length`, `metadata_uri_padding`) to support deterministic PDA verification and zero-copy storage.
@@ -222,7 +230,7 @@ All three components share the same RPC and key handling patterns as the initial
 - Config PDA seeds: `["config", namespace]`
 - Mint-authority PDA seeds: `["auth", config]`
 - Object manifest seeds: `["object_manifest", config, object_id_le_bytes]`
-- Object mint seeds: `["object_mint", config, object_id_le_bytes]`
+- Object mint seeds: `["object_mint", manifest_pda]`
 
 ### File Map
 - Anchor program source: `solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs`
