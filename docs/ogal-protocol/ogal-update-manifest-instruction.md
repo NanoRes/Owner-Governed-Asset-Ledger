@@ -30,6 +30,11 @@ The instruction references ten accounts:
 
 All accounts are writable except the mint, token account, metadata program, rent sysvar, and instructions sysvar. The metadata PDA remains writable so the CPI can update its URI.
 
+## Metaplex-Specific Requirements
+
+- `update_object_manifest` requires the `auth` PDA (seed `auth`, config key) defined in the `UpdateObjectManifest` account struct in `programs/owner_governed_asset_ledger/src/lib.rs`.
+- OGAL uses that `auth` PDA as the Metaplex `update_authority` when it executes the `UpdateMetadataAccountV2Cpi` call inside `update_object_manifest`.
+
 ## Preflight Derivations and Validations
 
 Prior to dispatching the instruction, the CLI performs several validations:
