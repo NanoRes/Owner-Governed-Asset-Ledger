@@ -37,6 +37,10 @@ All accounts are writable except the mint, token account, metadata program, rent
 - `update_object_manifest` requires the `auth` PDA (seed `auth`, config key) defined in the `UpdateObjectManifest` account struct in `programs/owner_governed_asset_ledger/src/lib.rs`.
 - OGAL uses that `auth` PDA as the Metaplex `update_authority` when it executes the `UpdateMetadataAccountV2Cpi` call inside `update_object_manifest`.
 
+## Required Sysvars (Do Not Omit)
+
+`rent` is mandatory for every `update_object_manifest` invocation. The `instructions` sysvar is optional; OGAL only validates it when it is present in the accounts list. See the `UpdateObjectManifest` account definition and the conditional sysvar check inside `update_object_manifest` in `programs/owner_governed_asset_ledger/src/lib.rs` for the authoritative on-chain requirements.
+
 ## Preflight Derivations and Validations
 
 Prior to dispatching the instruction, the CLI performs several validations:
