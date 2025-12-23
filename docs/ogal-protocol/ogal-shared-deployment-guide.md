@@ -22,6 +22,9 @@ OGAL treats the **ObjectManifest PDA** and its paired **object mint** as the can
 
 The `ObjectManifest` account stores the key fields clients should use to confirm identity and integrity: `object_id`, `config`, `mint`, `manifest_hash`, `metadata_uri`, `creator`, and `is_active`. Consumers should treat the manifest PDA address plus the recorded `mint` as the canonical handle for the asset, and validate that updates only mutate the hash/URI/activation state without changing the object’s identity.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
 
+#### ObjectManifest PDA
+The `ObjectManifest` struct also persists the manifest and mint bump seeds (`bump`, `mint_bump`), minting/initialization flags (`minted`, `initialized`), and metadata URI length/padding fields (`metadata_uri_length`, `metadata_uri_padding`) to support deterministic PDA verification and zero-copy storage.
+
 ### Instruction Catalogue
 OGAL exposes the following instructions:
 
