@@ -14,6 +14,14 @@ OGAL scopes all registry state to a **namespace** (an arbitrary public key chose
 
 Individual assets mint under **object manifests** (PDAs derived from the config, the string `"object_manifest"`, and a numeric object identifier) and **object mints** (derived from the config, `"object_mint"`, and the same object identifier). These manifests cache the creator, metadata URI, manifest hash, and flags recording whether the asset is initialized, active, and minted.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L37-L60】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
 
+### Transfers and Custody
+Ownership transfers happen via standard SPL Token transfers outside OGAL. OGAL does not escrow or mediate custody; it simply observes ownership at the moment a holder requests a manifest update. The `update_object_manifest` instruction enforces this by checking that the supplied token account belongs to the signer, matches the expected mint, and holds a positive balance before allowing metadata changes.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L749-L804】
+
+### Canonical Asset Identity
+OGAL treats the **ObjectManifest PDA** and its paired **object mint** as the canonical asset identity. The manifest PDA is the registry’s source of truth for a given object ID, while the object mint is the NFT representation derived from that same identifier. Together they anchor provenance and keep the asset identity stable even as metadata evolves.
+
+The `ObjectManifest` account stores the key fields clients should use to confirm identity and integrity: `object_id`, `config`, `mint`, `manifest_hash`, `metadata_uri`, `creator`, and `is_active`. Consumers should treat the manifest PDA address plus the recorded `mint` as the canonical handle for the asset, and validate that updates only mutate the hash/URI/activation state without changing the object’s identity.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
+
 ### Instruction Catalogue
 OGAL exposes the following instructions:
 
