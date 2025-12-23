@@ -30,6 +30,10 @@ The instruction references ten accounts:
 
 All accounts are writable except the mint, token account, metadata program, rent sysvar, and instructions sysvar. The metadata PDA remains writable so the CPI can update its URI.
 
+## Required Sysvars (Do Not Omit)
+
+`rent` is mandatory for every `update_object_manifest` invocation. The `instructions` sysvar is optional; OGAL only validates it when it is present in the accounts list. See the `UpdateObjectManifest` account definition and the conditional sysvar check inside `update_object_manifest` in `programs/owner_governed_asset_ledger/src/lib.rs` for the authoritative on-chain requirements.
+
 ## Preflight Derivations and Validations
 
 Prior to dispatching the instruction, the CLI performs several validations:
