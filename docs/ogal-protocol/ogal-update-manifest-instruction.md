@@ -51,6 +51,10 @@ When Solana executes `update_object_manifest`, the OGAL program enforces the fol
 
 Only after these validations does OGAL update the manifest hash, metadata URI, and active flag, subsequently emitting a `ManifestUpdated` event containing the config, manifest address, mint, object ID, and new status.
 
+## CPI metadata updates
+
+Inside `update_object_manifest`, OGAL reads the current Metaplex metadata account, builds a `DataV2` payload using the existing fields, and overwrites only the `uri` before issuing the `UpdateMetadataAccountV2Cpi` call. This preserves the name, symbol, creators, collection, seller fee basis points, and any other metadata fields, while still letting owners refresh the URI referenced by the manifest.
+
 ## Transaction Submission
 
 Finally, the client wraps the instruction in a transaction, sets the owner as the fee payer, fetches a recent blockhash, and calls `sendAndConfirmTransaction`. Logging hooks surface derived accounts, the success signature, or failure logs to aid operators in monitoring or debugging submissions.
