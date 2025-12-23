@@ -1343,6 +1343,7 @@ impl Auth {
     pub const LEN: usize = 8 + 32 + 1;
 }
 
+/// Object manifest PDA data layout used by mint and update flows.
 #[account(zero_copy)]
 #[repr(C)]
 pub struct ObjectManifest {

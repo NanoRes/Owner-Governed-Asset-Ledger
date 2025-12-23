@@ -30,6 +30,17 @@ The instruction references ten accounts:
 
 All accounts are writable except the mint, token account, metadata program, rent sysvar, and instructions sysvar. The metadata PDA remains writable so the CPI can update its URI.
 
+**Note:** The program validates that the `rent` sysvar matches `sysvar::rent::id()` and, when provided, the `instructions` sysvar matches `sysvar::instructions::id()`. Treat the account list above as the source of truth for required sysvars.
+
+## Metaplex-Specific Requirements
+
+- `update_object_manifest` requires the `auth` PDA (seed `auth`, config key) defined in the `UpdateObjectManifest` account struct in `programs/owner_governed_asset_ledger/src/lib.rs`.
+- OGAL uses that `auth` PDA as the Metaplex `update_authority` when it executes the `UpdateMetadataAccountV2Cpi` call inside `update_object_manifest`.
+
+## Required Sysvars (Do Not Omit)
+
+`rent` is mandatory for every `update_object_manifest` invocation. The `instructions` sysvar is optional; OGAL only validates it when it is present in the accounts list. See the `UpdateObjectManifest` account definition and the conditional sysvar check inside `update_object_manifest` in `programs/owner_governed_asset_ledger/src/lib.rs` for the authoritative on-chain requirements.
+
 ## Preflight Derivations and Validations
 
 Prior to dispatching the instruction, the CLI performs several validations:
@@ -54,6 +65,22 @@ When Solana executes `update_object_manifest`, the OGAL program enforces the fol
 In `update_object_manifest` (`programs/owner_governed_asset_ledger/src/lib.rs`), the program verifies that the provided `metadata_program` matches the Metaplex token metadata program id and that the `object_metadata` account is the metadata PDA derived from the object mint. The instruction requires callers to pass the metadata account derived from the mint (`["metadata", TOKEN_METADATA_PROGRAM_ID, mint]`), then uses the program’s Auth PDA as the update authority to CPI into Metaplex and update the metadata URI in-place.
 
 Only after these validations does OGAL update the manifest hash, metadata URI, and active flag, subsequently emitting a `ManifestUpdated` event containing the config, manifest address, mint, object ID, and new status.
+
+## CPI metadata updates
+
+Inside `update_object_manifest`, OGAL reads the current Metaplex metadata account, builds a `DataV2` payload using the existing fields, and overwrites only the `uri` before issuing the `UpdateMetadataAccountV2Cpi` call. This preserves the name, symbol, creators, collection, seller fee basis points, and any other metadata fields, while still letting owners refresh the URI referenced by the manifest.
+
+## Mutability and Update Control
+
+### Update Rules
+
+`update_object_manifest` enforces additional Metaplex-specific constraints and side effects:
+
+* **Metadata PDA requirement** – The instruction requires the correct Metaplex metadata PDA for the object mint (`object_metadata`) derived from `["metadata", TOKEN_METADATA_PROGRAM_ID, object_mint]`.
+* **Metadata program ID requirement** – The `metadata_program` account must be the Metaplex token metadata program ID (`metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s`).
+* **CPI metadata updates** – OGAL updates the on-chain token metadata `uri` via a Metaplex CPI in addition to updating the manifest fields.
+
+Integrators must pass both the `object_metadata` account and the `metadata_program` account so the CPI can succeed alongside the manifest update.
 
 ## Transaction Submission
 
