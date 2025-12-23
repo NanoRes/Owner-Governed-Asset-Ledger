@@ -14,6 +14,9 @@ OGAL scopes all registry state to a **namespace** (an arbitrary public key chose
 
 Individual assets mint under **object manifests** (PDAs derived from the config, the string `"object_manifest"`, and a numeric object identifier) and **object mints** (derived from the config, `"object_mint"`, and the same object identifier). These manifests cache the creator, metadata URI, manifest hash, and flags recording whether the asset is initialized, active, and minted.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L37-L60】【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L1116-L1179】
 
+### Transfers and Custody
+Ownership transfers happen via standard SPL Token transfers outside OGAL. OGAL does not escrow or mediate custody; it simply observes ownership at the moment a holder requests a manifest update. The `update_object_manifest` instruction enforces this by checking that the supplied token account belongs to the signer, matches the expected mint, and holds a positive balance before allowing metadata changes.【F:solana/owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs†L749-L804】
+
 ### Instruction Catalogue
 OGAL exposes the following instructions:
 
