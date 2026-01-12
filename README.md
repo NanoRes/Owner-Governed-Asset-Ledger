@@ -10,15 +10,8 @@ The Owner-Governed Asset Ledger is a shared Solana program that lets multiple st
 | ---- | ----- |
 | Program ID | `GwMpopxNkDYsnucBRPf47QSEsEzA3rS1o6ioMX78hgqx` |
 | Cluster | Solana mainnet-beta |
-| Maintainer authority | `E5mQ27muTebiYaohBsdsCwrvPN3MVoRmECFtL4A5Sx9q` (NanoRes Studios)|
-| Canonical namespace | `3Bc5ARkDGM2ZdAe8EjwHMmNrXvpSzQVcPug7MSp4Qhbw` |
-| Canonical config PDA | `5bhVoogdhY5VYuLuUuMXaiNrvP4zbmP1wNWstUUvmiF5` |
-| Collection mint | `EhULHuQtpaKUZSdv1kQR7XwYGRfEaU8b1Y7JkbFGQHxW` |
-| Mint-authority PDA | `G7skWhSjK6oskMKMuCbVuRQSVvrhc1VN1nQYLHR8ewL5` |
 
-Use the [Namespace Directory](docs/ogal-protocol/namespace-directory.md) to track
-additional namespaces as they come online. The table above reflects the single
-namespace currently in production for Token Toss.
+Use the [Namespace Directory](docs/ogal-protocol/namespace-directory.md) to track namespaces as they come online.
 
 ---
 
