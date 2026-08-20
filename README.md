@@ -2,6 +2,17 @@
 
 The Owner-Governed Asset Ledger is a shared Solana program that lets multiple studios mint, curate, and govern user-generated content (UGC) under a single, transparent registry. OGAL is deployed to Solana mainnet with program ID `GwMpopxNkDYsnucBRPf47QSEsEzA3rS1o6ioMX78hgqx` and backs the live Token Toss player-content pipeline. This repository packages the on-chain program, Node.js helpers, and Unity integration guides so partner teams can onboard additional experiences without redeploying the contract.
 
+## NanoRes Studios portfolio relationship
+
+OGAL is an independently reusable public technical rail in the NanoRes Studios
+portfolio. NanoRes first-party products may use OGAL, but OGAL is not the
+NanoRes MMO, NanoRes Arcade, NanoRes Account, NanoRes Economy, or NanoRes.fun
+website. Adoption does not require DBONK or any NanoRes game.
+
+This repository remains authoritative for OGAL protocol behavior. It does not
+define first-party RPG progression, business economics, Arcade rewards,
+custody, or public availability for another NanoRes product.
+
 ---
 
 ## Production deployment snapshot
