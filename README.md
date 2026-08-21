@@ -4,10 +4,21 @@ The Owner-Governed Asset Ledger is a shared Solana program that lets multiple st
 
 ## NanoRes Studios portfolio relationship
 
-OGAL is an independently reusable public technical rail in the NanoRes Studios
-portfolio. NanoRes first-party products may use OGAL, but OGAL is not the
-NanoRes MMO, NanoRes Arcade, NanoRes Account, NanoRes Economy, or NanoRes.fun
-website. Adoption does not require DBONK or any NanoRes game.
+NanoRes Studios is the parent brand for everything created under NanoRes
+branding. OGAL is an independently reusable public technical rail and a member
+of Open UGC & Beyond, the NanoRes Studios family for public tools and
+documentation. OGAL is not the NanoRes MMO, NanoRes Arcade, NanoRes Account,
+NanoRes Economy, or NanoRes.fun website. Adoption does not require DBONK or any
+NanoRes game.
+
+NanoRes first-party products intend to use OGAL where owner-governed,
+Solana-based assets can represent selected authoritative data and give users
+verifiable ownership and transfer options. Every integration still requires an
+accepted namespace, schema, authority, privacy, custody, transfer, recovery,
+correction, and legal contract. Using an on-chain asset does not by itself prove
+decentralized governance, distributed ownership, unrestricted transferability,
+or the absence of trusted services. Progressive decentralization is a design
+direction that must be supported by current evidence.
 
 This repository remains authoritative for OGAL protocol behavior. It does not
 define first-party RPG progression, business economics, Arcade rewards,
