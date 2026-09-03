@@ -1,60 +1,56 @@
-# Migrating an OGAL Namespace from Unity
+# OGAL Namespace Migration Source Boundary
 
-The Owner-Governed Asset Ledger (OGAL) program exposes a `migrate_config_namespace`
-instruction that clones the current registry configuration into a new namespace
-and spins up fresh config/auth PDAs. This workflow is helpful when the studio
-needs to rotate the registry namespace without redeploying the on-chain
-program.
+## Implemented behavior
 
-## Unity helper component
+At source commit `83b3436be62d5e187e1c87bf448a80b29c5a7d1e`, `migrate_config_namespace(new_namespace)` requires the current stored authority signer. The signer also pays to initialize a new config PDA and a new auth PDA.
 
-The Unity toolbelt now ships a `MigrateNamespaceTransactionSender` component that
-invokes `migrate_config_namespace` directly from a standalone scene.
+The instruction copies these values from the old config:
 
-1. Drag the component onto an empty GameObject in an isolated scene.
-2. Provide the authority wallet's private key (or define `DEPLOYER_PRIVATE_KEY`)
-and confirm the matching public key.
-3. Enter the current namespace (the component defaults to the live production
-   namespace) and the target namespace that should own the migrated config.
-4. Optionally fill the expected PDAs for the existing config/auth and the new
-   config/auth accounts. The component derives all four PDAs and refuses to send
-   the transaction if any derived address differs from the expected values.
-5. Press play (or disable `Send On Start` and call `SendTransactionAsync`
-   manually) to derive the accounts, build the instruction, and submit the
-   transaction. The authority wallet signs and covers rent for the new config
-   and auth PDAs.
+- authority;
+- object count; and
+- pause state.
 
-Because the helper logs every derived PDA, teams can copy the console output to
-update dashboards or post-migration runbooks.
+It records the new namespace and new PDA bump values; the new auth account points to the new config.
 
-## Runtime migrations
+## Behavior not implemented
 
-Projects can trigger the same migration flow at runtime through
-`OwnerGovernedAssetLedgerService.MigrateConfigNamespaceAsync`. Construct an
-`OwnerGovernedAssetLedgerMigrationRequest` with the new namespace and any
-expected PDAs that should be validated before the instruction is sent. The
-service derives the existing config/auth, validates the connected wallet is the
-recorded authority, derives the new config/auth PDAs, and sends the transaction
-with the authority wallet covering rent for both newly created accounts.
+The instruction does not:
 
-```csharp
-var request = new OwnerGovernedAssetLedgerMigrationRequest(
-    newNamespace: "<TARGET_NAMESPACE>",
-    expectedOldConfigPda: "<OPTIONAL_CONFIG_PDA>",
-    expectedOldAuthPda: "<OPTIONAL_AUTH_PDA>");
+- change the old config or auth account;
+- move, clone, or rewrite existing object manifests;
+- move or rewrite object mints, metadata, token accounts, or collection state;
+- create a redirect between namespaces;
+- emit an OGAL migration event;
+- establish asset discovery across old and new configs;
+- define schema or protocol version negotiation;
+- deprecate the old namespace;
+- define rollback; or
+- update any external client, dashboard, service, or Unity asset.
 
-var signature = await ogalService.MigrateConfigNamespaceAsync(request);
-Debug.Log($"Migration complete: {signature}");
-```
+Existing manifests remain associated with the original config PDA. A new config uses a different config key in future manifest derivations even if its copied object count matches the old config.
 
-If the RPC node rejects the transaction, the service surfaces an
-`OwnerGovernedAssetLedgerException` that includes both a user-friendly message
-and the raw RPC reason to simplify troubleshooting.
+## Continuity status
 
-## Post-migration checks
+The migration instruction is a config-copy primitive; it is not a complete continuity protocol. Documentation must not claim that it preserves complete manifest, mint, event, client, or governance continuity.
 
-After the transaction confirms, update any off-chain systems (dashboards,
-backend services, Unity config assets) to reference the new config and
-mint-authority PDAs. Projects that cache the namespace in
-`Solana_Configuration.asset` should refresh the asset so runtime fetches use the
-new PDA before minting resumes.
+A sequence such as pause, rotate collection authority, migrate, update clients, and resume is an operational proposal only. It has no accepted versioning, deprecation, finality, evidence, or rollback contract in this repository.
+
+## External integrations
+
+Historical Unity types and `Assets/` paths are absent from this repository. Their owning source and immutable pin are unverified here. The local script `owner-governed-asset-ledger/scripts/migrate-namespace.js` is present as supporting client source; it is not evidence of a successful migration or compatibility with an external product.
+
+## Required Human gate
+
+Before operational use, a Human must separately accept:
+
+- the migration objective and namespace ownership;
+- old and new account inventories;
+- manifest and mint discovery rules;
+- client-version compatibility and cutover behavior;
+- deprecation and rollback rules;
+- missing event and read-contract treatment;
+- external integration pins;
+- security review and test evidence; and
+- chain, provider, wallet, deployment, and release authority.
+
+This document grants none of those authorities.
