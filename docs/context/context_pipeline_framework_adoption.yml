@@ -1,0 +1,64 @@
+schema_version: "1.0"
+record_id: "OGAL-CPF-ADOPTION-CANDIDATE-001"
+record_status: "RECONCILIATION_CANDIDATE_NOT_ACCEPTED"
+source_snapshot:
+  repository: "NanoRes/Owner-Governed-Asset-Ledger"
+  branch: "main"
+  commit: "83b3436be62d5e187e1c87bf448a80b29c5a7d1e"
+  tree: "f14290d84896985da72abc697baf153255b782ab"
+  lifecycle: "UNVERSIONED_SOURCE_SNAPSHOT"
+  rust_component_version: "0.1.0"
+  git_tags: []
+  github_releases: []
+cpf_governance_source:
+  repository: "NanoRes/contextual-pipeline-framework"
+  visibility: "private"
+  branch: "main"
+  commit: "1ad0874fffc377118a086aca54e561638fe66364"
+  tree: "cc4c508c7e9bf6378dd28a04c678684b918d3e70"
+  package_version: "0.7.0-rc.1"
+  compatibility_version: "0.7.x-enterprise-assurance"
+  release_posture: "UNRELEASED_RELEASE_CANDIDATE"
+  source_status: "ACTIVE_APPROVED_FOR_GOVERNANCE_ONLY"
+compatibility:
+  declared_status: "CANDIDATE_NOT_ACCEPTED"
+  claimed_version: "0.7.x-enterprise-assurance"
+  acceptance_authority: "HUMAN"
+  acceptance_requires:
+    - "independent source review of this exact candidate"
+    - "Human acceptance of the candidate and its unresolved risks"
+source_roles:
+  canonical_program_behavior: "owner-governed-asset-ledger/programs/owner_governed_asset_ledger/src/lib.rs"
+  supporting_documentation: "README files and docs/ogal-protocol"
+  public_claims: "PUBLIC_CLAIMS_ONLY_UNVERIFIED"
+  evidence: "separately authorized and immutable evidence records"
+  external_integrations: "owned by separately pinned external repositories"
+  generated_outputs: "ABSENT_INACTIVE_NON_AUTHORITATIVE"
+studio_context_boundary:
+  role: "NANORES_SPECIFIC_ADOPTION_OVERLAY_AND_PORTFOLIO_ROUTER"
+  imported_as_neutral_ogal_policy: false
+  excluded_policy_domains:
+    - "identity"
+    - "gameplay"
+    - "business"
+    - "economy"
+    - "custody"
+    - "public policy"
+session_ownership:
+  durable_repository_registry: "ABSENT"
+  candidate_task_lease: "HUMAN_CONFIRMED_NO_OVERLAP_FOR_ALLOWLISTED_PATHS"
+  task_lease_is_permanent_ownership: false
+generated_output_posture:
+  context_rt: "ABSENT_INACTIVE_NON_AUTHORITATIVE"
+  project_compression: "ABSENT_INACTIVE_NON_AUTHORITATIVE"
+  generation_authorized: false
+preserved_human_gates:
+  - "mint admission authority"
+  - "licensing"
+  - "public-good service policy"
+  - "security remediation"
+  - "mainnet and deployment verification"
+  - "release and production claims"
+  - "external integration claims"
+  - "economic, custody, settlement, token, and public-claim authority"
+mutation_authority: "NONE_FROM_THIS_RECORD"

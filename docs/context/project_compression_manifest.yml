@@ -1,0 +1,29 @@
+schema_version: "1.0"
+record_id: "OGAL-PROJECT-COMPRESSION-POSTURE-001"
+record_status: "SOURCE_RECORD_ONLY"
+source_snapshot:
+  repository: "NanoRes/Owner-Governed-Asset-Ledger"
+  branch: "main"
+  commit: "83b3436be62d5e187e1c87bf448a80b29c5a7d1e"
+  tree: "f14290d84896985da72abc697baf153255b782ab"
+context_rt:
+  status: "ABSENT"
+  active: false
+  authoritative: false
+  artifacts: []
+project_compression:
+  status: "ABSENT"
+  active: false
+  authoritative: false
+  artifacts: []
+generation:
+  authorized: false
+  refresh_required: false
+  invalidation_rule: "Any future generated artifact must be regenerated only by a separately authorized task after accepted source changes."
+authority:
+  source_truth: "immutable program source and accepted Human decisions"
+  generated_outputs_can_accept_source: false
+  generated_outputs_can_grant_authority: false
+notes:
+  - "This manifest records absence and policy; it is not a generated Context//RT or compression artifact."
+  - "Validation results are evidence only and cannot activate generated outputs."

@@ -1,55 +1,64 @@
-# How OGAL Builds on Metaplex’s NFT Protocols
+# How OGAL Uses Metaplex Source Interfaces
 
-## Metaplex as the foundation layer
-OGAL is intentionally built on top of the Solana Unity SDK and Metaplex NFT protocols so that its higher-level gameplay and monetisation flows stay interoperable with the broader Solana ecosystem.
+## Scope
 
-The on-chain program imports Metaplex’s token metadata CPI helpers (`CreateMetadataAccountV3`, `CreateMasterEditionV3`, `VerifyCollection`, and the sized-collection variant) alongside SPL token primitives, making Metaplex metadata and collection semantics first-class citizens inside every OGAL mint.
+This document describes source-level use of Metaplex interfaces at OGAL commit `83b3436be62d5e187e1c87bf448a80b29c5a7d1e`. It does not establish a deployment, marketplace compatibility, production use, gameplay behavior, monetization, or a security review.
 
-## OGAL ledger architecture
-OGAL scopes each deployment to a namespace-backed configuration PDA that records the registry authority, pause flag, and object counter, paired with a mint-authority PDA that can sign metadata CPIs on behalf of the registry.
+## Imported Metaplex operations
 
-Object manifests are their own PDAs derived from the config, storing the immutable object ID, mint, creator, and the manifest hash while tracking mutable metadata URIs, activation state, and whether the NFT has been minted yet.
+The program source imports and invokes Metaplex token metadata interfaces for:
 
-The shared deployment guide summarises these account relationships and explains how clients derive and validate each PDA before issuing instructions.
+- `CreateMetadataAccountV3`;
+- `CreateMasterEditionV3`;
+- `VerifySizedCollectionItem`;
+- `VerifyCollection` for an unsized collection;
+- `UpdateMetadataAccountV2`.
 
-## Mint pipeline layered on Metaplex CPIs
-`mint_object_nft` combines OGAL’s registry logic with Metaplex metadata creation in a single instruction. It enforces that minting is not paused, derives or creates the manifest, mint, and recipient ATA, and checks manifest hashes and metadata URIs before any tokens move.
+OGAL also uses SPL Token and associated-token interfaces to create or validate a mint and recipient associated token account, then mint a token unit.
 
-When the first mint occurs, OGAL totals creator revenue shares, demands that the recorded manifest creator be listed, and then calls Metaplex’s `CreateMetadataAccountV3` and `CreateMasterEditionV3` CPIs to produce a verified 1/1 NFT tied to the configured collection.
+## OGAL state layered around metadata
 
-OGAL immediately follows with either `VerifySizedCollectionItem` or the legacy `VerifyCollection` CPI so both sized and unsized Metaplex collections work without redeploying OGAL.
+OGAL adds namespace-scoped config and auth PDAs, object manifest PDAs, object mint PDAs, a pause flag, an object counter, a stored manifest hash and URI, and active/minted/initialized flags.
 
-These steps ensure OGAL mints remain standard-compliant Metaplex assets even while OGAL tracks additional registry state.
+These records are OGAL protocol state. Metaplex metadata and an OGAL manifest have related but distinct roles; neither creates legal rights, application entitlement, custody, or settlement behavior.
 
-## Governance, access control, and guard rails
-Initialization requires either the config authority or an address whitelisted in `ALLOWED_DEPLOYERS`, preventing unauthorized namespace creation.
+## First-mint behavior
 
-Operators can transfer control with `set_authority`, pause or resume the registry with `set_paused`, and migrate to a fresh namespace without redeploying the program, preserving continuity for all manifests and mints.
+For a new manifest, the payer becomes the recorded manifest creator. On the first mint, the program:
 
-Error codes such as `MintingPaused`, `CreatorMustSign`, `InvalidCollectionMetadataAccount`, and `MissingManifestCreator` translate low-level guard rails into actionable feedback for clients.
+1. validates name, symbol, URI, creator, seller fee, account, and program limits;
+2. requires creator shares to total 100 and include the recorded manifest creator;
+3. requires every creator marked verified to sign;
+4. creates Metaplex metadata with the auth PDA as update authority;
+5. mints one token unit to the recipient account;
+6. creates a master edition with `max_supply = 0`; and
+7. verifies either a sized or unsized collection.
 
-The shared guide calls out these instructions and highlights the requirements (e.g., signer ownership proofs when updating manifests) so partner teams build to the same ruleset.
+The source calls `mint_to` on every invocation that reaches that step; first-mint metadata and master-edition work is conditional on the manifest not already being marked minted. Later-call behavior depends on current account and authority state and was not dynamically tested here.
 
-## Observability and runtime access policies
-OGAL emits Anchor events for every mint, manifest update, and pause toggle, enabling downstream monitoring and compliance tooling without trusting off-chain reports.
+## Metadata is not economic execution
 
-Manifest accounts expose `is_active`, `metadata_uri`, and `manifest_hash` so studios can gate runtime access, revoke availability, or rotate metadata while maintaining provenance links for indexers and marketplaces.
+Creator shares and seller fee basis points are Metaplex metadata constraints. The reviewed source does not calculate, custody, distribute, reconcile, or guarantee royalties, revenue, fair-share payouts, taxes, refunds, disputes, or settlement.
 
-This policy-driven approach governs how gameplay surfaces OGAL assets even though the underlying NFT metadata remains public on Solana.
+## Authority boundaries
 
-## Operational tooling and shared workflows
-Because OGAL relies on Metaplex verification, the collection NFT must point at OGAL’s mint-authority PDA; the rotation guide explains when to use Metaboss versus OGAL’s own CPI-backed helper so maintainers can hand authority back and forth safely (including the unsized-collection fallback added to OGAL).
+- The auth PDA signs metadata creation, master-edition creation, collection verification, metadata URI updates, and collection update-authority rotation.
+- The stored config authority signer is required for collection update-authority rotation.
+- The stored config authority is not required to sign `mint_object_nft`; its public key is supplied as an unchecked account that must match config.
+- A positive-balance object token holder signer can update the manifest hash, URI, and active flag. That possession check grants only the implemented update ability.
 
-The mint troubleshooting runbook shows how Unity logs serialized transactions and how engineers replay them to inspect Metaplex CPI failures, particularly collection verification guard rails.
+The unresolved mint-admission behavior requires a separate Human decision and independent security review.
 
-The shared deployment guide also ships Node.js scripts and Unity components that wrap OGAL instructions, derive PDAs, and log reproducible diagnostics, making it straightforward for third parties to integrate OGAL without reimplementing the full Solana stack.
+## Collection and deployment boundaries
 
-## What makes OGAL unique relative to vanilla Metaplex
-Metaplex on its own offers metadata and collection verification, but OGAL layers a governed registry on top: namespace-scoped config state, manifest hashing, active/inactive flags, object counters, and creator-share validation are all enforced before the Metaplex CPI ever runs.
+The source verifies expected metadata and master-edition PDA relationships and supports sized and unsized collection verification branches. It does not prove the current authority, size, mint, or namespace state of any collection on a network.
 
-OGAL also provides operational levers (pause/migrate/authority rotation), structured events, and runtime access guidance so studios can commercialise user-generated content with fine-grained control that plain Metaplex metadata cannot supply.
+Historical collection addresses and production statements remain `PUBLIC_CLAIMS_ONLY_UNVERIFIED`; see the [namespace directory](namespace-directory.md). Chain queries, deployment parity, tool behavior, and external integrations require separate authorization and evidence.
 
-Combined with battle-tested tooling and explicit guard-rail documentation, OGAL complements rather than replaces Metaplex: it leverages Metaplex for NFT standardisation while adding governance, auditability, and gameplay-aware policy enforcement that the base Metaplex program does not address.
+## Observability limit
 
-## Testing
-⚠️ Not run (QA review only).
+OGAL emits `ObjectMinted`, `ManifestUpdated`, and `PauseStatusUpdated`. It emits no event for collection update-authority rotation. Metaplex logs or account changes are external observations and require an accepted read and reconciliation contract before supporting an audit claim.
+
+## External tooling
+
+Local Node.js script source is present under `owner-governed-asset-ledger/scripts/`. Unity source and a tracked Anchor IDL are absent. No tool execution, dependency installation, IDL generation, build, test, wallet use, provider access, or chain verification supports this candidate.
